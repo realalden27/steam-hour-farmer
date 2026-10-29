@@ -1,0 +1,9 @@
+services:
+  steam-farmer:
+    build: .
+    restart: unless-stopped
+    volumes:
+      - ./data:/app/data
+    env_file:
+      - .env
+

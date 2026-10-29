@@ -1,0 +1,48 @@
+{
+  "name": "steam-hour-farmer",
+  "version": "1.0.0",
+  "description": "Farm hours headlessly on Steam without game installation",
+  "author": "Alden (realalden27)",
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "steam-hour-farmer": "./dist/index.js"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "dev": "tsx watch --exclude data --exclude dist src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "repository": "github:realalden27/steam-hour-farmer",
+  "keywords": [
+    "steam",
+    "hour-farming",
+    "idle",
+    "playtime"
+  ],
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "pino": "^9.0.0",
+    "pino-pretty": "^11.0.0",
+    "qrcode-terminal": "^0.12.0",
+    "steam-session": "^1.7.0",
+    "steam-totp": "^2.1.2",
+    "steam-user": "^5.2.1",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/qrcode-terminal": "^0.12.2",
+    "@types/steam-totp": "^2.1.0",
+    "@types/steam-user": "^5.1.1",
+    "tsx": "^4.0.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.0.0"
+  }
+}

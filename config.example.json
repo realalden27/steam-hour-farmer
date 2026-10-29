@@ -1,0 +1,24 @@
+{
+  "accounts": [
+    {
+      "name": "main",
+      "accountName": "steam_user",
+      "password": "steam_pass",
+      "sharedSecret": "your_shared_secret",
+      "games": [730, 440, 570],
+      "persona": 1,
+      "loginMethod": "credentials"
+    },
+    {
+      "name": "alt",
+      "games": [730, "Custom Game"],
+      "loginMethod": "qr"
+    }
+  ],
+  "settings": {
+    "logOnIntervalMs": 600000,
+    "refreshGamesIntervalMs": 300000,
+    "dataDirectory": "data"
+  }
+}
+

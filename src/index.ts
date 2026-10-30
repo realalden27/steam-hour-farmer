@@ -2,7 +2,6 @@
 import { loadConfig } from "./config.js";
 import { AccountManager } from "./manager.js";
 import { log } from "./logger.js";
-import type { AccountState } from "./account.js";
 
 async function main(): Promise<void> {
   log.info("Steam Hour Farmer v1.0.0 by Alden (realalden27)");
@@ -10,15 +9,9 @@ async function main(): Promise<void> {
   const config = loadConfig();
   const manager = new AccountManager(config);
 
-  manager.onStateChange((state: AccountState) => {
-    const games = state.gamesPlaying.join(", ");
-    log.info(`[${state.name}] [${state.status.toUpperCase()}] games: [${games}]`);
-  });
-
   setupShutdown(manager);
 
   await manager.startAll();
-  log.info(`Farming started for ${manager.count} account(s)`);
 }
 
 function setupShutdown(manager: AccountManager): void {

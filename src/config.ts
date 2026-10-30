@@ -26,9 +26,36 @@ export const ConfigSchema = z.object({
       logOnIntervalMs: z.number().positive().default(600_000),
       refreshGamesIntervalMs: z.number().positive().default(300_000),
       minRequestGapMs: z.number().positive().default(60_000),
+      qrLoginTimeoutMs: z.number().positive().default(120_000),
       dataDirectory: z.string().default("data"),
     })
     .default({}),
+}).superRefine((config, ctx) => {
+  const accountNames = new Set<string>();
+  const steamAccountNames = new Set<string>();
+
+  config.accounts.forEach((account, index) => {
+    if (accountNames.has(account.name)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["accounts", index, "name"],
+        message: "Account names must be unique",
+      });
+    }
+    accountNames.add(account.name);
+
+    if (account.accountName) {
+      const normalized = account.accountName.toLowerCase();
+      if (steamAccountNames.has(normalized)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["accounts", index, "accountName"],
+          message: `Steam account "${account.accountName}" is configured more than once`,
+        });
+      }
+      steamAccountNames.add(normalized);
+    }
+  });
 });
 
 export type AccountConfig = z.infer<typeof AccountSchema>;
@@ -38,7 +65,7 @@ export function loadConfig(): AppConfig {
   dotenv.config();
 
   if (existsSync("config.json")) {
-    log.info("Loading config from config.json");
+    log.debug("Loading config from config.json");
     const raw = JSON.parse(readFileSync("config.json", "utf-8"));
     return ConfigSchema.parse(raw);
   }
@@ -94,4 +121,3 @@ function parseGamesList(raw: string): (number | string)[] {
     })
     .filter((g): g is number | string => g !== null);
 }
-

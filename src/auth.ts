@@ -13,13 +13,23 @@ export interface AuthResult {
   accountName?: string;
 }
 
-export async function authenticate(account: AccountConfig, dataDir: string): Promise<AuthResult> {
+export class QRLoginTimeoutError extends Error {
+  constructor(timeoutMs: number) {
+    super(`QR login timed out after ${Math.round(timeoutMs / 1000)} seconds`);
+    this.name = "QRLoginTimeoutError";
+  }
+}
+
+export async function authenticate(
+  account: AccountConfig,
+  dataDir: string,
+  qrLoginTimeoutMs = LOGIN_TIMEOUT_MS,
+): Promise<AuthResult> {
   const tokenPath = join(dataDir, "tokens", `${account.name}.txt`);
 
   const saved = readSavedToken(tokenPath);
   if (saved) {
-    const displayAccount = saved.accountName || account.name;
-    log.info({ account: displayAccount }, "Using saved refresh token");
+    log.debug({ account: account.name }, "Using saved refresh token");
     return saved;
   }
 
@@ -31,7 +41,7 @@ export async function authenticate(account: AccountConfig, dataDir: string): Pro
   }
 
   log.info({ account: account.name }, "Authenticating with QR code");
-  const result = await loginWithQR(account.name);
+  const result = await loginWithQR(account.name, qrLoginTimeoutMs);
   persistToken(tokenPath, result.refreshToken, result.accountName);
   return result;
 }
@@ -75,9 +85,9 @@ async function loginWithCredentials(account: AccountConfig): Promise<AuthResult>
   });
 }
 
-async function loginWithQR(accountName: string): Promise<AuthResult> {
+async function loginWithQR(accountName: string, timeoutMs: number): Promise<AuthResult> {
   const session = new LoginSession(EAuthTokenPlatformType.SteamClient);
-  session.loginTimeout = LOGIN_TIMEOUT_MS;
+  session.loginTimeout = timeoutMs;
 
   const startResult = await session.startWithQR();
   if (!startResult.qrChallengeUrl) {
@@ -89,20 +99,23 @@ async function loginWithQR(accountName: string): Promise<AuthResult> {
 
   return new Promise<AuthResult>((resolve, reject) => {
     session.on("remoteInteraction", () => {
-      log.info("QR scanned - approve the login on your phone");
+      log.info({ account: accountName }, "QR scanned - approve the login on your phone");
     });
 
     session.on("authenticated", () => {
       if (!session.refreshToken) return reject(new Error("No refresh token received"));
       const resolvedAccount = session.accountName || session.steamID?.toString();
-      log.info({ steamID: session.steamID?.toString(), account: resolvedAccount }, "QR authentication successful");
+      log.debug(
+        { account: accountName, steamAccount: resolvedAccount, steamID: session.steamID?.toString() },
+        "QR authentication successful",
+      );
       resolve({
         refreshToken: session.refreshToken,
         accountName: session.accountName,
       });
     });
 
-    session.on("timeout", () => reject(new Error("QR login timed out (2 min)")));
+    session.on("timeout", () => reject(new QRLoginTimeoutError(timeoutMs)));
     session.on("error", (err) => reject(err));
   });
 }
@@ -132,4 +145,3 @@ export function persistToken(tokenPath: string, token: string, accountName?: str
   writeFileSync(tokenPath, JSON.stringify({ refreshToken: token, accountName }), "utf-8");
   log.debug("Refresh token saved");
 }
-

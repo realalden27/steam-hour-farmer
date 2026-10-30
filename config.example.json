@@ -2,9 +2,8 @@
   "accounts": [
     {
       "name": "main",
-      "accountName": "steam_user",
-      "password": "steam_pass",
-      "sharedSecret": "your_shared_secret",
+      "accountName": "your_steam_username",
+      "password": "your_steam_password",
       "games": [730, 440, 570],
       "persona": 1,
       "loginMethod": "credentials"
@@ -18,7 +17,7 @@
   "settings": {
     "logOnIntervalMs": 600000,
     "refreshGamesIntervalMs": 300000,
+    "qrLoginTimeoutMs": 120000,
     "dataDirectory": "data"
   }
 }
-

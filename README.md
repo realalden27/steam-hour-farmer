@@ -71,29 +71,35 @@ For running multiple accounts at the same time, create a `config.json` file in t
 {
   "accounts": [
     {
-      "name": "Main Account",
+      "name": "main",
+      "accountName": "your_steam_username",
+      "password": "your_steam_password",
       "games": [730, 440, 570],
       "persona": 1,
-      "loginMethod": "qr"
+      "loginMethod": "credentials"
     },
     {
-      "name": "Alt Account",
-      "accountName": "alt_steam_username",
-      "password": "alt_steam_password",
-      "sharedSecret": "optional_shared_secret",
+      "name": "alt",
       "games": [730, "Custom Game Title"],
       "persona": 1,
-      "loginMethod": "credentials"
+      "loginMethod": "qr"
     }
   ],
   "settings": {
     "logOnIntervalMs": 600000,
     "refreshGamesIntervalMs": 300000,
     "minRequestGapMs": 60000,
+    "qrLoginTimeoutMs": 120000,
     "dataDirectory": "data"
   }
 }
 ```
+
+The `main` account shows username-and-password login; replace the placeholders with that account's credentials. The `alt` account shows QR login. Keep your real credentials private and do not share your local `config.json`.
+
+For QR login on multiple accounts, set each account's `loginMethod` to `"qr"` and give every account a unique `name`. The app displays one QR code at a time: scan and approve it with that account in the Steam mobile app, and the next account's QR code appears after authentication. Each account's refresh token is saved separately under `<dataDirectory>/tokens/` (default: `data/tokens/`) and reused on later starts.
+
+If a QR code is not scanned and approved before `settings.qrLoginTimeoutMs` expires (default: 120000 ms / 2 minutes), that account is marked `skipped` for the current run and the app continues to the next account. Restart the app to retry a skipped account.
 
 #### Account Fields:
 - `name`: Display label for logging and identification.
@@ -104,6 +110,8 @@ For running multiple accounts at the same time, create a `config.json` file in t
 - `sharedSecret`: Steam TOTP shared secret for automatic 2FA (optional).
 - `persona`: Steam presence state: `1` = Online (default), `2` = Busy, `3` = Away, `4` = Snooze, `7` = Invisible.
 - `enabled`: Set to `false` to temporarily skip an account without deleting it.
+- `name` values must be unique because they identify each account's saved token.
+- `settings.qrLoginTimeoutMs`: Time allowed for QR approval in milliseconds; after timeout the account is skipped until the next app start.
 
 ---
 
@@ -154,6 +162,10 @@ Compile TypeScript to JavaScript and run the optimized build:
 npm run build
 npm start
 ```
+
+### Windows Launcher
+
+After installing dependencies with `npm install`, double-click `start.bat` in the project folder. It builds and starts the app in the command window; leave that window open while it runs. Press Ctrl+C to stop it.
 
 ### Running in the Background (PM2)
 

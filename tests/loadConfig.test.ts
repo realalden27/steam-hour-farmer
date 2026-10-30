@@ -6,6 +6,16 @@ vi.mock("dotenv", () => ({
   },
 }));
 
+vi.mock("fs", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("fs")>();
+  return {
+    ...actual,
+    existsSync: vi.fn((path) =>
+      path === "config.json" ? false : actual.existsSync(path),
+    ),
+  };
+});
+
 import { loadConfig, type AccountConfig } from "../src/config.js";
 
 describe("loadConfig()", () => {
@@ -68,4 +78,3 @@ describe("loadConfig()", () => {
     );
   });
 });
-

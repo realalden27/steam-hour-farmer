@@ -62,6 +62,7 @@ describe("ConfigSchema", () => {
     expect(config.settings.logOnIntervalMs).toBe(600_000);
     expect(config.settings.refreshGamesIntervalMs).toBe(300_000);
     expect(config.settings.minRequestGapMs).toBe(60_000);
+    expect(config.settings.qrLoginTimeoutMs).toBe(120_000);
     expect(config.settings.dataDirectory).toBe("data");
   });
 
@@ -69,13 +70,56 @@ describe("ConfigSchema", () => {
     expect(() => ConfigSchema.parse({ accounts: [] })).toThrow();
   });
 
+  it("accepts multiple QR-only accounts with unique names", () => {
+    const config = ConfigSchema.parse({
+      accounts: [
+        { name: "main", games: [440], loginMethod: "qr" },
+        { name: "alt", games: [730], loginMethod: "qr" },
+      ],
+    });
+
+    expect(config.accounts).toHaveLength(2);
+    expect(config.accounts.map((account) => account.loginMethod)).toEqual(["qr", "qr"]);
+  });
+
+  it("rejects duplicate account names", () => {
+    expect(() =>
+      ConfigSchema.parse({
+        accounts: [
+          { name: "same", games: [440], loginMethod: "qr" },
+          { name: "same", games: [730], loginMethod: "qr" },
+        ],
+      }),
+    ).toThrow("Account names must be unique");
+  });
+
+  it("rejects duplicate Steam accountName across accounts", () => {
+    expect(() =>
+      ConfigSchema.parse({
+        accounts: [
+          { name: "main", accountName: "alden", password: "p1", games: [440] },
+          { name: "alt", accountName: "ALDEN", password: "p2", games: [730] },
+        ],
+      }),
+    ).toThrow(/is configured more than once/);
+  });
+
   it("accepts custom settings", () => {
     const config = ConfigSchema.parse({
       accounts: [{ name: "t", games: [440] }],
-      settings: { logOnIntervalMs: 120_000, dataDirectory: "custom" },
+      settings: { logOnIntervalMs: 120_000, qrLoginTimeoutMs: 30_000, dataDirectory: "custom" },
     });
     expect(config.settings.logOnIntervalMs).toBe(120_000);
+    expect(config.settings.qrLoginTimeoutMs).toBe(30_000);
     expect(config.settings.dataDirectory).toBe("custom");
   });
-});
 
+  it("rejects a non-positive QR login timeout", () => {
+    expect(() =>
+      ConfigSchema.parse({
+        accounts: [{ name: "t", games: [440] }],
+        settings: { qrLoginTimeoutMs: 0 },
+      }),
+    ).toThrow();
+  });
+});
